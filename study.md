@@ -101,6 +101,13 @@ var buildTree = function(preorder, inorder) {
 
 };
 ```
+
+remember to draw out balanced tree to help remember the indexes. Buildtree is called n times - once for each node.
+
+The total runtime thus depends on the number of recursion levels. If you have a approximately balanced tree, the depth is O(log n), thus we get to O(n · log n) at all. As the only necessarily slow part is the search of the root node in the inorder array, I guess we could optimize that even a bit more if we know more about the tree.
+
+In the worst case we have one recursion level for each node in the tree, coming to complexity O(n·n).
+
 ##Valid Parentheses
 ```javascript
 var isValid = function(s) {
@@ -213,7 +220,60 @@ var levelOrder = function(root) {
 
 ```
 
+##api communications
+```javascript
+router.get('/users/:userId/books/:bookId', function (req, res) {
+  res.json(req.params)
+})
+```
+
+req.query
+app.use to plug in routers
+
+##three sum
+
+```javascript
+var threeSum = function(nums) {
+
+   let triplets = [];
+  nums = nums.sort((a, b) => a - b);
+
+  for(let i = 0; i < nums.length-2; i++) {
+    if(i == 0 || nums[i] > nums[i - 1]) {
+      let lo = i + 1;
+      let high = nums.length - 1;
+
+      while(lo < high) {
+        let sum = nums[i] + nums[lo] + nums[high];
+        if(sum == 0) {
+          triplets.push([nums[i], nums[lo], nums[high]]);
+          lo++;
+          high--;
+          //skip duplicates from lo
+          while(lo<high && nums[lo]==nums[lo-1])
+            lo++;
+
+          //skip duplicates from high
+          while(lo<high && nums[high]==nums[high+1])
+            high--;
+        } else if(sum < 0) {
+          lo++;
+        } else {
+          high--;
+        }
+      }
+    }
+  }
+
+  return triplets;
+};
+```
+
+n^2 time
+
 ##merge two sorted lists
+
+In Javascript, you can use the sort() function but remember that its default sort method is based on unicode comparisons.
 
 ```javascript
 function mergeTwoLists(l1, l2){
@@ -251,6 +311,71 @@ function swap(nums, i, j) {
 }
 ```
 
+time and space of sorting
+
+Mergesort is not dependant upon the array so its time is always nlogn. we also need n space for the extra arrays.
+
+quicksort is often used in real worlds applications because it can reliably be implemnetd in nlogn time and can n2 time can be avoided. It is also convenient  becuase of the very low space cost: either constant space or logn for recursive calls
+
+##bfs and dfs
+```javascript
+function TreeNode(val) {
+  this.val = val;
+  this.left = this.left = null;
+}
+
+function bfs(root) {
+  let q = [root];
+
+  while (q.length) {
+    let size = q.length;
+
+    for (i = 0; i < q.length; i++) {
+      let curr = q.shift();
+      console.log(curr.val) //processing
+      if (curr.left) q.push(curr.left);
+      if (curr.right) q.push(curr.right);
+    }
+  }
+
+}
+
+function dfs(root) {
+  if (root.left) dfs(root.left);
+  console.log(root.val)
+  if (root.right) dfs(root.right);
+}
+
+function dfsGraph(root) {
+  if (!root) return;
+  console.log(root.val)
+  root.visited = true;
+  for (let child of root.chilren) {
+    if (!child.visited) {
+      dfs(child);
+    }
+  }
+}
+
+function bfsGraph(root) {
+  let q = [root];
+  root.visited = true;
+
+  while (q.length) {
+    let curr = q.shift();
+    console.log(curr);
+    for (let node in curr.children) {
+      if (!node.visited) {
+        node.visited = true;
+        q.push(node)
+      }
+    }
+  }
+}
+```
+
+bfs space is n/2 - 1 or n.
+
 ##mergesort
 
 ```javascript
@@ -279,6 +404,30 @@ function merge(left, right) {
   return left.length > 0 ? result.concat(left) : result.concat(right);
 }
 ```
+lowest common ancestor
+```javascript
+var lowestCommonAncestor = function(root, p, q) {
+
+    if (!root) return null;
+
+    if (root.val === p.val || root.val === q.val) return root;
+
+    let left = lowestCommonAncestor(root.left, p, q);
+    let right = lowestCommonAncestor(root.right, p, q);
+
+    if (left && right) return root;
+    if (left) return left;
+    if (right) return right;
+
+};
+```
+
+##How to create objects in Javascript
+new keyword or objet.create
+
+Object.create(proto[, propertiesObject])
+
+Very simply said, new X is Object.create(X.prototype) with additionally running the constructor function. (And giving the constructor the chance to return the actual object that should be the result of the expression instead of this.)
 
 ##Databases
 
@@ -286,7 +435,7 @@ function merge(left, right) {
 Normalized db’s are designed to minimize redundancy while denormailzed dbs are designed to optimize read time. Denormilzation is commonly used to create highly scalable systems. In a normalized db courses might have a foreign key for teachers (with no redundancy) while in a denormalized db we might store the teachers name in the courses table.
 
 #Acid
-Atomicity
+
 Transactions are single logical units of work (read and write). ACID principles are followed to maintain consistency.
 
 A - Atomicity (all or nothing)
