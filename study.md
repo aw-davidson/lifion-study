@@ -247,6 +247,8 @@ var threeSum = function(nums) {
         let sum = nums[i] + nums[lo] + nums[high];
         if(sum == 0) {
           triplets.push([nums[i], nums[lo], nums[high]]);
+
+          //important to remember and easy to forget
           lo++;
           high--;
           //skip duplicates from lo
@@ -359,11 +361,12 @@ function dfsGraph(root) {
 
 function bfsGraph(root) {
   let q = [root];
-  root.visited = true;
 
   while (q.length) {
     let curr = q.shift();
     console.log(curr);
+    root.visited = true;
+
     for (let node in curr.children) {
       if (!node.visited) {
         node.visited = true;
@@ -494,6 +497,417 @@ if (cluster.isMaster) {
   }).listen(8000);
 ```
 
+GENERAL QUESTIONS
+
+##Subtree of Another Tree
+Given two non-empty binary trees s and t, check whether tree t has exactly the same structure and node values with a subtree of s. A subtree of s is a tree consists of a node in s and all of this node's descendants. The tree s could also be considered as a subtree of itself.
+
+```javascript
+var isSubtree = function(s, t) {
+
+    let sPre = preorder(s);
+    let tPre = preorder(t);
+
+    return sPre.indexOf(tPre) !== -1;
+
+};
+
+function preorder(root, str = [""]) {
+    if (!root) {
+        str[0] += '*';
+        return;
+    }
+    str[0] += " " + root.val + " "; //white space is important! Think about root 12** and root 2**
+    preorder(root.left, str);
+    preorder(root.right, str);
+    return str[0];
+}
+```
+
+In this approach we do a preorder traversal of both trees and convert their traversals into easily comparable strings. Preorder is unique when we include the null nodes as special charachters. Str is put inside an array so that we are passing the actual traversal. If the str were just a string then we would only return the root.
+
+Alternatively we call isSameTree on every node.
+
+```javascript
+var isSubtree = function(s, t) {
+
+    if (!s) {
+        return false;
+    } else if (s.val === t.val && isSameTree(s, t)) { //only calling sametree on equal vals
+        return true;
+    }
+
+    return isSubtree(s.left, t) || isSubtree(s.right, t)
+
+};
+
+function isSameTree(s, t) {
+    if (!s && !t) return true;
+    if (!s || !t) return false;
+
+    return s.val === t.val && isSameTree(s.left, t.left) && isSameTree(s.right, t.right);
+}
+```
+
+The naive runtime is O(s * t) but we can see that we only call isSameTree once for every matching value. The runtime is closer to O(n + km). where k is the number of occurences of t's root in s.
+
+### inorder successor
+```javascript
+var inorderSuccessor = function(root, p) {
+
+
+    if (root === null) return null;
+
+    if (root.val <= p.val) {
+        return inorderSuccessor(root.right, p);
+    } else {
+        let left = inorderSuccessor(root.left, p);
+        return left ? left : root;
+  }
+};
+```
+
+Just search from root to bottom, trying to find the smallest node larger than p and return the last one that was larger.
+
+## sort colors
+
+Given an array with n objects colored red, white or blue, sort them in-place so that objects of the same color are adjacent, with the colors in the order red, white and blue.
+
+Here, we will use the integers 0, 1, and 2 to represent the color red, white, and blue respectively.
+
+Note: You are not suppose to use the library's sort function for this problem.
+```javascript
+var sortColors = function(nums) {
+    // 1-pass
+    let p1 = 0,
+        p2 = nums.length - 1,
+        index = 0;
+    while (index <= p2) {
+        if (nums[index] == 0) {
+            nums[index] = nums[p1];
+            nums[p1] = 0;
+            p1++;
+        }
+        if (nums[index] == 2) {
+            nums[index] = nums[p2];
+            nums[p2] = 2;
+            p2--;
+            index--;
+        }
+        index++;
+    }
+};
+```
+
+use count sort for 2 pass solution. otherwise this can be done in one pass using some techniques of quick sort.
+
+count sort
+
+```javascript
+unction countingSort(theArray, maxValue) {
+
+    // array of 0's at indices 0...maxValue
+    var numCounts = [];
+    for (var i = 0; i < maxValue + 1; i++) {
+        numCounts[i] = 0;
+    }
+
+    // populate numCounts
+    theArray.forEach(function(num) {
+        numCounts[num] += 1;
+    });
+
+    // populate the final sorted array
+    var sortedArray = [];
+    var currentSortedIndex = 0;
+
+    // for each num in numCounts
+    for (var num = 0; num < numCounts.length; num++) {
+        var count = numCounts[num];
+
+        // for the number of times the item occurs
+        for (var i = 0; i < count; i++) {
+
+            // add it to the sorted array
+            sortedArray[currentSortedIndex] = num;
+            currentSortedIndex++;
+        }
+    }
+
+    return sortedArray;
+```
+
+getRandom BST
+
+```javascript
+function TreeNode(val) {
+  this.val = val;
+  this.left = this.right = null;
+  this.size = 1;
+}
+
+TreeNode.prototype.getRandom = function() {
+  let random = Math.floor(Math.random() * this.size);
+  let leftSize = this.left ? this.left.size : 0;
+  if (random < leftSize) {
+    return this.left.getRandom();
+  } else if (random === leftSize){
+    return this;
+  } else {
+    return this.right.getRandom();
+  }
+
+}
+
+TreeNode.prototype.insert = function(val) {
+
+  this.size++;
+
+  if (this.val < val) {
+    if (!this.right) {
+      this.right = new TreeNode(val);
+    } else {
+      this.right.insert(val);
+    }
+  } else {
+    if (!this.left) {
+      this.left = new TreeNode(val);
+    } else {
+      this.left.insert(val);
+    }
+  }
+}
+
+TreeNode.prototype.find = function(val) {
+  if (this.val === val) {
+    return this;
+  } else if (this.val < val) {
+    return this.right ? this.right.find(val) : null;
+  } else {
+    return this.left ? this.left.find(val) : null;
+  }
+}
+```
+
+the naive solution would be to build a traversal of the tree and get a random number which represents the index in the traversal. However we can do better. Each node has a size which represents the size of the tree. If there are more nodes on the left we should go left more than we should go right. if there are 10 nodes on the left and 5 on the right, then 10/16 times should go left while 5/16 we should right. 1/16 times we should return the root.
+
+The base case is when we call getRandom on a leaf node where random is 0 becuase size is 1 and leftSize is 0 so we return this.
+
+##Find Peak Element
+A peak element is an element that is greater than its neighbors.
+
+Given an input array nums, where nums[i] ≠ nums[i+1], find a peak element and return its index.
+
+The array may contain multiple peaks, in that case return the index to any one of the peaks is fine.
+
+You may imagine that nums[-1] = nums[n] = -∞.
+
+```javascript
+var findPeakElement = function(nums, low = 0, high = nums.length - 1) {
+    if(low == high)
+        return low;
+    else {
+        let mid1 = Math.floor((low+high)/2);
+        let mid2 = mid1+1;
+        if (nums[mid1] > nums[mid2]) {
+            return findPeakElement(nums, low, mid1);
+        } else {
+            return findPeakElement(nums, mid2, high);
+        }
+    }
+};
+```
+
+We use a binary search to find the peak. If the right value is less than the left we find the peak on the left side and vice-versa. We use binary search to find the local max in logn time.
+
+
+
+###search in 2d matrix
+
+Write an efficient algorithm that searches for a value in an m x n matrix. This matrix has the following properties:
+
+Integers in each row are sorted in ascending from left to right.
+Integers in each column are sorted in ascending from top to bottom.
+Example:
+
+Consider the following matrix:
+
+[
+  [1,   4,  7, 11, 15],
+  [2,   5,  8, 12, 19],
+  [3,   6,  9, 16, 22],
+  [10, 13, 14, 17, 24],
+  [18, 21, 23, 26, 30]
+]
+Given target = 5, return true.
+
+Given target = 20, return false.
+
+```javascript
+var searchMatrix = function(matrix, target) {
+
+    if (!matrix.length) return false;
+
+    let row = 0;
+    let col = matrix[0].length - 1;
+
+    while (row < matrix.length && col >= 0) {
+        const current = matrix[row][col];
+        if (current === target) {
+            return true;
+        } else if (current > target) {
+            col--;
+        } else {
+            row++;
+        }
+    }
+
+    return false;
+
+};
+```
+
+We start at the top right corner (or bottom left corner). If the current is greater than the target we need to decrease the current and so we move to the left (col--). if the current is less than the target we move down with row++. the runtime is n + m.
+
+##search rotated
+
+Suppose an array sorted in ascending order is rotated at some pivot unknown to you beforehand.
+
+(i.e., [0,1,2,4,5,6,7] might become [4,5,6,7,0,1,2]).
+
+You are given a target value to search. If found in the array return its index, otherwise return -1.
+
+You may assume no duplicate exists in the array.
+
+Your algorithm's runtime complexity must be in the order of O(log n).
+
+Example 1:
+
+Input: nums = [4,5,6,7,0,1,2], target = 0
+Output: 4
+Example 2:
+
+Input: nums = [4,5,6,7,0,1,2], target = 3
+Output: -1
+
+```javascript
+var search = function(nums, target, lo = 0, hi = nums.length - 1) {
+
+    let mid = Math.floor((lo + hi) / 2);
+
+   // console.log(lo, hi, mid)
+
+    if (nums[mid] === target) {
+        return mid;
+    }
+
+    if (lo > hi) return -1;
+
+    //if left is sorted
+    if (nums[lo] < nums[mid]) {
+        if (target >= nums[lo] && target < nums[mid]) {
+            //search left
+            return search(nums, target, lo, mid -1)
+        } else {
+            //search right
+            return search(nums, target, mid + 1, hi)
+        }
+    } else if (nums[mid] < nums[lo]){
+        if (target > nums[mid] && target <= nums[hi]) {
+           //search right
+            return search(nums, target, mid + 1, hi)
+        } else {
+            return search(nums, target, lo, mid -1)
+        }
+    } else if (nums[lo] === nums[mid]){ //left and right half are all repeats
+        if (nums[mid] !== nums[hi]) {  //if right is different search it
+            return search(nums, target, mid + 1, hi)
+        } else { //we have to search both halves
+          let result = return search(nums, target, lo, mid -1);
+          if (result === -1) {
+            return search(nums, target, mid + 1, hi)
+          } else {
+            return result;
+          }
+        }
+    }
+};
+```
+
+if left is sorted than we check if target is in range and search there. else search right and vice versa. else there are duplicates as in [2, 2, 2, 3, 4, 2] and we need to search right and left.
+
+```javascript
+var serialize = function(root) {
+    let seri = "";
+
+    function dfs(root) {
+        if (!root) {
+            seri += ' * ';
+            return;
+        }
+        seri += " " + root.val + " ";
+        dfs(root.left);
+        dfs(root.right);
+    }
+    dfs(root);
+
+    return seri;
+};
+
+/**
+ * Decodes your encoded data to tree.
+ *
+ * @param {string} data
+ * @return {TreeNode}
+ */
+
+var deserialize = function(data) {
+    data = data.split(" ").filter((elem) => elem !== "");
+
+    function dfs(data) {
+
+        if (data[0] === "*") {
+            return null;
+        }
+        let root = new TreeNode(+data[0]);
+        data.shift();
+        root.left = dfs(data);
+        data.shift();
+        root.right = dfs(data);
+
+        return root;
+
+    }
+
+    return dfs(data);
+
+};
+```
+
+```javascript
+function peaksAndValleys(arr) {
+  for (let i = 1; i < arr.length; i+=2) {
+    let maxIndex = getMaxInd(arr, i);
+    if (maxIndex !== i) {
+      [arr[maxIndex], arr[i]] = [arr[i], arr[maxIndex]];
+    }
+  }
+}
+
+function getMaxInd(arr, i) {
+  if (arr[i] > arr[i + 1] && arr[i] > arr[i - 1]) {return i}
+  if (arr[i + 1] > arr[i] && arr[i + 1] > arr[i - 1]) {return i + 1};
+  if (arr[i - 1] > arr[i] && arr[i - 1] > arr[i + 1]) {return i - 1 }
+
+  return i;
+}
+```
+
+Triangular series:
+A triangular series always starts with 1 and increases by 1 with each number.
+
+n(n + 1) / 2 or (n^2 + n) / 2
+
 ##What do the terms “CPU bound” and “I/O bound” mean?
 A program is CPU bound if it would go faster if the CPU were faster, i.e. it spends the majority of its time simply using the CPU (doing calculations). A program that computes new digits of π will typically be CPU-bound, it's just crunching numbers.
 
@@ -554,8 +968,88 @@ Reducers take in actions and return a new state. It is important that they are p
 ##What is ‘Store’ in Redux?
 The store is the holder of the application state which also provides other methods like dispatch actions and registering listeners.
 
+How to talk about life socks
 
+How to persist the cart on refresh:
+For non-logged in users we persisted the data to localStorage.
 
+for signed in users we persisted the cart in the database. This allowed us to trace a cart to a user, and would allow users to log in from anywhere and still view their pending cart.
 
+Loading items from localStorage or db.
+
+What happens to localStorage if the browser closes?
+
+we have window.localStorage (stores data with no expiration) and window.sessionsStorage (stores data when for one session until the browser tab is closed)
+
+##sessions
+
+req.session.id = user.id
+
+```javascript
+app.post('/register', (req, res) => {
+  //hash password so its not plain text
+  req.body.password = bcrypt.hashSync(req.body.password, 14);
+  //create a new user object
+  const user = _.pick(req.body, 'name', 'email', 'password');
+  User.create(user)
+  .then((user) => {
+    req.session.userId = user.id;
+    res.redirect("/dashboard")
+  })
+  .catch((err) => {
+    console.error(err);
+  })
+
+})
+
+app.post('login', (req, res) => {
+  User.findOne({
+    where: {
+      email: req.body.email
+    }
+  })
+  .then((user) => {
+    if (!user) {
+      res.status(401).send('Wrong username and/or password')
+    } else if (!bcrypt.compareSync(user.password, req.body.password)) {
+      res.render("Login", {error: "Wrong password"})
+    } else {
+      //use session object
+      req.session.userId = user.id;
+      res.redirect("/dashboard");
+    }
+  })
+  .catch((err) => {
+
+  })
+})
+
+app.get("dashboard", (req, res) => {
+  if (!(req.sesssion && req.session.userId)) {
+    return res.redirect("/login")
+  }
+
+  User.findOne({
+    where:
+      id: req.session.userId
+  })
+  .then((user) => {
+    if (!user) {
+      return res.redirect("/login");
+    }
+  })
+  .catch((err) => {
+    console.error(err)
+  })
+})
+
+router.post('/logout', (req, res) => {
+  req.logout();
+  req.session.destroy();
+  res.redirect("/dashboard")
+})
+```
+
+replace('/\W/', "")
 
 
